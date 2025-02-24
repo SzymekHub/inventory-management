@@ -1,17 +1,22 @@
 import 'package:flutter/material.dart';
 import 'package:inventory_management_individual/api/api_service.dart';
 import 'package:inventory_management_individual/pages/navigation_page.dart';
+import 'package:inventory_management_individual/websockets/websocket_service.dart';
+
 import '../main.dart'; // Import to access the global theme settings
 
 class VinylListScreen extends StatefulWidget {
   const VinylListScreen({super.key});
 
   @override
-  _VinylListScreenState createState() => _VinylListScreenState();
+  VinylListScreenState createState() => VinylListScreenState();
 }
 
-class _VinylListScreenState extends State<VinylListScreen> {
+class VinylListScreenState extends State<VinylListScreen> {
   final ApiService apiService = ApiService();
+  final WebSocketService _webSocketService =
+      WebSocketService(); // Get the instance
+
   List<Map<String, dynamic>> vinyls = [];
   bool _isLoading = true;
   String? errorMessage;
@@ -21,6 +26,14 @@ class _VinylListScreenState extends State<VinylListScreen> {
   void initState() {
     super.initState();
     _loadVinyls();
+
+    // Listen for real-time updates
+    _webSocketService.listen((message) {
+      setState(() {
+        // Update the vinyl list when a new message is received
+        _loadVinyls();
+      });
+    });
   }
 
   // Fetch vinyl records from the API

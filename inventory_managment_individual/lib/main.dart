@@ -1,7 +1,17 @@
 import 'package:flutter/material.dart';
 import 'pages/navigation_page.dart';
+import 'websockets/websocket_service.dart'; // Import WebSocketService
 
 void main() {
+  // Connect to WebSocket, this ensures that the connection is established as soon as the app starts.
+  // This is ideal because the connection is available whenever I need it, and that way I avoid the overhead of reconnecting every time I navigate to a specific screen.
+  final webSocketService = WebSocketService();
+  try {
+    webSocketService.connect('ws://10.0.2.2:8080/ws');
+  } catch (e) {
+    debugPrint("Error connecting to WebSocket: $e");
+    //Display an error message to the user
+  }
   runApp(const InventoryManagementApp());
 }
 
