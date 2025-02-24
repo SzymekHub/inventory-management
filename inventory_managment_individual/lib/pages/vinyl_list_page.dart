@@ -38,14 +38,14 @@ class _VinylListScreenState extends State<VinylListScreen> {
       });
     } catch (e) {
       debugPrint('Error loading vinyls: $e');
-      setState(() {
-        _isLoading = false;
-        errorMessage = 'Failed to load vinyl records. Please try again.';
-      });
-
       //ScaffoldMessenger is inside a mounted check to prevent errors
       //if the widget is disposed before the async call completes
       if (mounted) {
+        setState(() {
+          _isLoading = false;
+          errorMessage = e.toString();
+        });
+
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(errorMessage!),
