@@ -79,10 +79,7 @@ class VinylListScreenState extends State<VinylListScreen> {
       ),
       body: Container(
         padding: const EdgeInsets.all(16.0),
-        decoration: const BoxDecoration(
-          color: InventoryManagementApp
-              .primaryBackgroundColor, // Match background color
-        ),
+        decoration: const BoxDecoration(),
         child: RefreshIndicator(
           onRefresh: _loadVinyls,
           child: _isLoading
@@ -253,7 +250,6 @@ class HelpButton extends StatelessWidget {
         height: 35,
       ),
       style: IconButton.styleFrom(
-        alignment: Alignment.centerRight,
         backgroundColor:
             const Color(0x9E5273B5), // Background color of the circle
         shape: const CircleBorder(),

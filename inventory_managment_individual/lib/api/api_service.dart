@@ -7,6 +7,27 @@ class ApiService {
   // In that case, I need to use my development machine's actual IP address on my local network.
   final String baseUrl = 'http://10.0.2.2:8080';
 
+  // New method to fetch enums
+  Future<Map<String, List<String>>> getVinylEnums() async {
+    try {
+      final response = await http
+          .get(Uri.parse('$baseUrl/vinyls/enums'))
+          .timeout(const Duration(seconds: 5));
+
+      if (response.statusCode == 200) {
+        final Map<String, dynamic> decodedData = jsonDecode(response.body);
+        // Convert each list of enums to a List<String>
+        final Map<String, List<String>> enums = decodedData
+            .map((key, value) => MapEntry(key, List<String>.from(value)));
+        return enums;
+      } else {
+        throw Exception('Failed to load enums: ${response.statusCode}');
+      }
+    } catch (e) {
+      throw Exception('Could not connect to the server. Please try again.');
+    }
+  }
+
   Future<List<Map<String, dynamic>>> getVinyls(int page, int size) async {
     try {
       final response = await http
