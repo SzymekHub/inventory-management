@@ -1,6 +1,8 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:inventory_management_individual/api/api_service.dart';
 import 'package:inventory_management_individual/main.dart';
+import 'package:image_picker/image_picker.dart';
 
 class AddVinylPage extends StatefulWidget {
   const AddVinylPage({super.key});
@@ -21,17 +23,43 @@ class AddVinylPageState extends State<AddVinylPage> {
   String? selectedState;
   String? selectedColor;
 
+  // Artist handling
+  List<Map<String, dynamic>> artists = [];
+  String? selectedArtistName;
+  int? selectedArtistId;
+  bool isAddingNewArtist = false;
+
   // Form controllers
   final TextEditingController titleController = TextEditingController();
   final TextEditingController artistController = TextEditingController();
+  final TextEditingController newArtistNameController = TextEditingController();
+  final TextEditingController newArtistBioController = TextEditingController();
   final TextEditingController quantityController = TextEditingController();
   final TextEditingController priceController = TextEditingController();
+  bool isReleased = false; // Default to false
   final TextEditingController descriptionController = TextEditingController();
+
+  // Image Picker
+  File? _image;
+  final picker = ImagePicker();
+
+  Future getImage() async {
+    final pickedFile = await picker.pickImage(source: ImageSource.gallery);
+
+    setState(() {
+      if (pickedFile != null) {
+        _image = File(pickedFile.path);
+      } else {
+        debugPrint('No image selected.');
+      }
+    });
+  }
 
   @override
   void initState() {
     super.initState();
     _loadEnums();
+    _loadArtists();
   }
 
   // Fetch enums from the API
@@ -54,6 +82,26 @@ class AddVinylPageState extends State<AddVinylPage> {
     }
   }
 
+  Future<void> _loadArtists() async {
+    try {
+      final data = await apiService.getArtists(
+          0, 100); // Fetch all artists, adjust page size as needed
+      setState(() {
+        artists = data;
+      });
+    } catch (e) {
+      // Handle error (e.g., show a snackbar)
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Failed to load artists: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -69,15 +117,138 @@ class AddVinylPageState extends State<AddVinylPage> {
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               // Image and Title section
-              const ImageAndTitleSection(),
+              InkWell(
+                onTap: getImage,
+                child: Container(
+                  width: 180,
+                  height: 180,
+                  decoration: BoxDecoration(
+                    border: Border.all(color: Colors.white60, width: 2),
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: _image == null
+                      ? const Icon(Icons.add_a_photo, color: Colors.white60)
+                      : Image.file(
+                          _image!,
+                          fit: BoxFit.cover,
+                        ),
+                ),
+              ),
               const SizedBox(height: 20),
 
-              // Artist Field
+              // Title Field
               CustomTextField(
-                controller: artistController,
-                labelText: 'Artist',
+                controller: titleController,
+                labelText: 'Title',
               ),
               const SizedBox(height: 10),
+
+              // Artist Dropdown or Input
+              if (!isAddingNewArtist)
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    DropdownButtonFormField<String>(
+                      decoration: InputDecoration(
+                        labelText: 'Artist',
+                        labelStyle: InventoryManagementApp.baseTextStyle
+                            .copyWith(fontSize: 17, color: Colors.white60),
+                        border: const OutlineInputBorder(
+                          borderSide: BorderSide(color: Colors.white60),
+                        ),
+                        enabledBorder: const OutlineInputBorder(
+                          borderSide: BorderSide(color: Colors.white60),
+                        ),
+                        focusedBorder: const OutlineInputBorder(
+                          borderSide:
+                              BorderSide(color: Color(0xFFFFFFFF), width: 3),
+                        ),
+                      ),
+                      dropdownColor: const Color.fromRGBO(40, 40, 43, 1.0),
+                      style: InventoryManagementApp.baseTextStyle.copyWith(
+                        fontSize: 17,
+                        color: const Color(0xFFDDDDDD),
+                        fontFamily: 'ABeeZee',
+                      ),
+                      value: selectedArtistName,
+                      items: artists.map((artist) {
+                        return DropdownMenuItem<String>(
+                          value: artist['name'],
+                          child: Text(artist['name']),
+                        );
+                      }).toList(),
+                      onChanged: (value) {
+                        setState(() {
+                          selectedArtistName = value;
+                          //Find the selected Artist from the dropdown
+                          selectedArtistId = artists.firstWhere(
+                              (artist) => artist['name'] == value)['id'];
+                        });
+                      },
+                    ),
+                    const SizedBox(height: 10),
+                    TextButton(
+                      onPressed: () {
+                        setState(() {
+                          isAddingNewArtist = true;
+                        });
+                      },
+                      child: const Text(
+                        'Add New Artist',
+                        style: TextStyle(color: Colors.blue),
+                      ),
+                    ),
+                  ],
+                )
+              else
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    CustomTextField(
+                      controller: newArtistNameController,
+                      labelText: 'New Artist Name',
+                    ),
+                    const SizedBox(height: 10),
+                    CustomTextField(
+                      controller: newArtistBioController,
+                      labelText: 'New Artist Bio',
+                    ),
+                    const SizedBox(height: 10),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceAround,
+                      children: [
+                        ElevatedButton(
+                          onPressed: () {
+                            setState(() {
+                              isAddingNewArtist = false;
+                            });
+                          },
+                          style: ElevatedButton.styleFrom(
+                            foregroundColor:
+                                InventoryManagementApp.primaryTextColor,
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 20, vertical: 10),
+                          ),
+                          child: const Text('CANCEL',
+                              style: TextStyle(
+                                  fontSize: 15, fontWeight: FontWeight.bold)),
+                        ),
+                        ElevatedButton(
+                          onPressed: _createNewArtist,
+                          style: ElevatedButton.styleFrom(
+                            foregroundColor:
+                                InventoryManagementApp.primaryTextColor,
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 20, vertical: 10),
+                          ),
+                          child: const Text('CREATE',
+                              style: TextStyle(
+                                  fontSize: 15, fontWeight: FontWeight.bold)),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
 
               // Group vinylType and speed together
               Row(
@@ -161,6 +332,33 @@ class AddVinylPageState extends State<AddVinylPage> {
               ),
               const SizedBox(height: 20),
 
+              // Release Status Checkbox
+              Row(
+                children: [
+                  Checkbox(
+                    value: isReleased,
+                    onChanged: (bool? value) {
+                      setState(() {
+                        isReleased = value ?? false;
+                      });
+                    },
+                    fillColor: WidgetStateProperty.resolveWith<Color>(
+                      (Set<WidgetState> states) {
+                        if (states.contains(WidgetState.selected)) {
+                          return Colors.blue;
+                        }
+                        return Colors.white60;
+                      },
+                    ),
+                  ),
+                  const Text(
+                    'Released',
+                    style: TextStyle(color: Colors.white),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 10),
+
               // Action Buttons
               ActionButtonsRow(
                 onCancel: () => Navigator.pop(context),
@@ -178,19 +376,20 @@ class AddVinylPageState extends State<AddVinylPage> {
     // Collect the data from the form
     final Map<String, dynamic> vinylData = {
       'title': titleController.text,
-      'artist': artistController.text,
-      'quantity': int.tryParse(quantityController.text) ?? 0,
+      'artist_id': selectedArtistId,
+      'stock': int.tryParse(quantityController.text) ?? 0,
       'price': double.tryParse(priceController.text) ?? 0.0,
       'vinylType': selectedVinylType,
       'speed': selectedSpeed,
       'state': selectedState,
       'color': selectedColor,
       'description': descriptionController.text,
+      'isReleased': isReleased, // Add this line
     };
 
     try {
-      // Call the addVinyl API method
-      final response = await apiService.addVinyl(vinylData);
+      // Call the addVinyl API method, passing the image if available
+      final response = await apiService.addVinyl(vinylData, _image);
 
       // Check the response status
       if (response.statusCode == 201) {
@@ -239,6 +438,70 @@ class AddVinylPageState extends State<AddVinylPage> {
     }
   }
 
+  Future<void> _createNewArtist() async {
+    // Collect the data from the form
+    final Map<String, dynamic> artistData = {
+      'name': newArtistNameController.text,
+      'bio': newArtistBioController.text,
+    };
+
+    try {
+      final response = await apiService.createArtist(artistData);
+
+      if (response.statusCode == 201) {
+        // Artist created successfully
+        debugPrint('Artist created successfully');
+
+        // Show a success message
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Artist created successfully!'),
+              backgroundColor: Colors.green,
+            ),
+          );
+        }
+        //Reload the list of artists
+        await _loadArtists();
+        setState(() {
+          isAddingNewArtist = false;
+          selectedArtistName = newArtistNameController.text;
+          newArtistNameController.clear();
+          newArtistBioController.clear();
+        });
+
+        // Clear the form
+        _resetForm();
+      } else {
+        // Failed to add artist
+        debugPrint('Failed to add artist: ${response.statusCode}');
+
+        // Show an error message
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Failed to add vinyl: ${response.body}'),
+              backgroundColor: Colors.red,
+            ),
+          );
+        }
+      }
+    } catch (e) {
+      // Error occurred while calling the API
+      debugPrint('Error adding artist: $e');
+
+      // Show an error message
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error adding vinyl: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
+  }
+
   // Helper method to reset form fields
   void _resetForm() {
     titleController.clear();
@@ -251,40 +514,9 @@ class AddVinylPageState extends State<AddVinylPage> {
       selectedSpeed = null;
       selectedState = null;
       selectedColor = null;
+      isReleased = false; // Reset the isReleased state
+      _image = null; // Also clear the selected image
     });
-  }
-}
-
-// Image and Title section widget
-class ImageAndTitleSection extends StatelessWidget {
-  const ImageAndTitleSection({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return Row(
-      children: [
-        Container(
-          width: 180,
-          height: 180,
-          decoration: BoxDecoration(
-            border: Border.all(color: Colors.white60, width: 2),
-            borderRadius: BorderRadius.circular(10),
-          ),
-          child: const Icon(Icons.add_a_photo, color: Colors.white60),
-        ),
-        const SizedBox(width: 20),
-        Expanded(
-          child: SizedBox(
-            height: 75,
-            child: CustomTextField(
-              controller:
-                  TextEditingController(), // This will be fixed in the implementation
-              labelText: 'Title',
-            ),
-          ),
-        ),
-      ],
-    );
   }
 }
 

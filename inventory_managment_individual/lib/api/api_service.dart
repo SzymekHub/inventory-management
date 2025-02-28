@@ -1,5 +1,8 @@
 import 'dart:convert';
+import 'dart:io';
 import 'package:http/http.dart' as http;
+import 'package:http_parser/http_parser.dart';
+import 'package:mime/mime.dart';
 
 class ApiService {
   // Use 10.0.2.2 for Android emulator and not localhost.
@@ -28,6 +31,7 @@ class ApiService {
     }
   }
 
+  //vinyls
   Future<List<Map<String, dynamic>>> getVinyls(int page, int size) async {
     try {
       final response = await http
@@ -65,18 +69,37 @@ class ApiService {
     }
   }
 
-  Future<http.Response> addVinyl(Map<String, dynamic> vinylData) async {
+  Future<http.Response> addVinyl(
+      Map<String, dynamic> vinylData, File? imageFile) async {
     try {
-      final response = await http
-          .post(
-            Uri.parse('$baseUrl/vinyls'),
-            headers: <String, String>{
-              'Content-Type': 'application/json; charset=UTF-8',
-            },
-            body: jsonEncode(vinylData),
-          )
-          .timeout(const Duration(seconds: 5));
-      return response;
+      var request = http.MultipartRequest('POST', Uri.parse('$baseUrl/vinyls'));
+
+      // Create a MultipartFile for the vinylData with the correct Content-Type
+      request.files.add(
+        http.MultipartFile.fromString(
+          'vinylData',
+          jsonEncode(vinylData),
+          contentType: MediaType('application', 'json'),
+        ),
+      );
+
+      if (imageFile != null) {
+        // Determine the Content-Type of the image file
+        final mimeTypeData =
+            lookupMimeType(imageFile.path, headerBytes: [0xFF, 0xD8])!
+                .split('/'); // Add this import 'package:mime/mime.dart';
+        // Add the image file as a part
+        request.files.add(await http.MultipartFile.fromPath(
+          'image',
+          imageFile.path,
+          contentType: MediaType(mimeTypeData[0], mimeTypeData[1]),
+        ));
+      }
+
+      // Send the request
+      var response = await request.send().timeout(const Duration(seconds: 5));
+
+      return http.Response.fromStream(response);
     } catch (e) {
       throw Exception('Could not connect to the server. Please try again.');
     }
@@ -111,5 +134,42 @@ class ApiService {
     }
   }
 
-  // will add methods for image uploads here
+  //artists
+  Future<List<Map<String, dynamic>>> getArtists(int page, int size) async {
+    try {
+      final response = await http
+          .get(Uri.parse('$baseUrl/artist?page=$page&size=$size'))
+          .timeout(const Duration(seconds: 5));
+
+      if (response.statusCode == 200) {
+        final Map<String, dynamic> decodedData = jsonDecode(response.body);
+        if (decodedData.containsKey('artists')) {
+          return List<Map<String, dynamic>>.from(decodedData['artists']);
+        } else {
+          throw Exception('Invalid response format');
+        }
+      } else {
+        throw Exception('Failed to load artists: ${response.statusCode}');
+      }
+    } catch (e) {
+      throw Exception('Could not connect to the server. Please try again.');
+    }
+  }
+
+  Future<http.Response> createArtist(Map<String, dynamic> artistData) async {
+    try {
+      final response = await http
+          .post(
+            Uri.parse('$baseUrl/artist'),
+            headers: <String, String>{
+              'Content-Type': 'application/json; charset=UTF-8',
+            },
+            body: jsonEncode(artistData),
+          )
+          .timeout(const Duration(seconds: 5));
+      return response;
+    } catch (e) {
+      throw Exception('Could not connect to the server. Please try again.');
+    }
+  }
 }
