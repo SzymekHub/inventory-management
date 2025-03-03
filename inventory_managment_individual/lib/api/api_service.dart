@@ -8,7 +8,12 @@ class ApiService {
   // Use 10.0.2.2 for Android emulator and not localhost.
   // When physical Android device connected to my development machine, 10.0.2.2 might not work.
   // In that case, I need to use my development machine's actual IP address on my local network.
+  // android emulator:
   final String baseUrl = 'http://10.0.2.2:8080';
+
+  // machine IP address:
+  // cmd -> ipconfig -> Wireless LAN adapter WiFi ->  IPv4 Address
+  //final String baseUrl = 'http://192.168.178.36:8080';
 
   // New method to fetch enums
   Future<Map<String, List<String>>> getVinylEnums() async {

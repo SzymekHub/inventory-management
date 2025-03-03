@@ -555,7 +555,7 @@ class CustomDropdown extends StatelessWidget {
             ),
             dropdownColor: const Color.fromRGBO(40, 40, 43, 1.0),
             style: InventoryManagementApp.baseTextStyle.copyWith(
-              fontSize: 17,
+              fontSize: 14,
               color: const Color(0xFFDDDDDD),
               fontFamily: 'ABeeZee',
             ),
