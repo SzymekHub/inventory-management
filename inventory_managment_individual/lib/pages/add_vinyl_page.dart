@@ -114,14 +114,14 @@ class AddVinylPageState extends State<AddVinylPage> {
         child: Padding(
           padding: const EdgeInsets.all(16.0),
           child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
+            crossAxisAlignment: CrossAxisAlignment.center,
             children: [
               // Image and Title section
               InkWell(
                 onTap: getImage,
                 child: Container(
-                  width: 180,
-                  height: 180,
+                  width: 120,
+                  height: 120,
                   decoration: BoxDecoration(
                     border: Border.all(color: Colors.white60, width: 2),
                     borderRadius: BorderRadius.circular(10),
@@ -134,7 +134,32 @@ class AddVinylPageState extends State<AddVinylPage> {
                         ),
                 ),
               ),
-              const SizedBox(height: 20),
+              const SizedBox(height: 10),
+
+              // Release Status Toggle Switch
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Text(
+                    'Released?',
+                    style: InventoryManagementApp.baseTextStyle.copyWith(
+                      fontSize: 18,
+                      color: Colors.white60,
+                    ),
+                  ),
+                  Switch(
+                    value: isReleased,
+                    onChanged: (bool value) {
+                      setState(() {
+                        isReleased = value;
+                      });
+                    },
+                    activeColor: Colors.greenAccent,
+                    inactiveTrackColor: Colors.grey[700],
+                    activeTrackColor: Colors.green[800],
+                  ),
+                ],
+              ),
 
               // Title Field
               CustomTextField(
@@ -331,33 +356,6 @@ class AddVinylPageState extends State<AddVinylPage> {
                 maxLines: 2,
               ),
               const SizedBox(height: 20),
-
-              // Release Status Checkbox
-              Row(
-                children: [
-                  Checkbox(
-                    value: isReleased,
-                    onChanged: (bool? value) {
-                      setState(() {
-                        isReleased = value ?? false;
-                      });
-                    },
-                    fillColor: WidgetStateProperty.resolveWith<Color>(
-                      (Set<WidgetState> states) {
-                        if (states.contains(WidgetState.selected)) {
-                          return Colors.blue;
-                        }
-                        return Colors.white60;
-                      },
-                    ),
-                  ),
-                  const Text(
-                    'Released',
-                    style: TextStyle(color: Colors.white),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 10),
 
               // Action Buttons
               ActionButtonsRow(
