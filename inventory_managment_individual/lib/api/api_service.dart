@@ -156,6 +156,22 @@ class ApiService {
     }
   }
 
+  Future<Map<String, dynamic>> getArtist(int id) async {
+    try {
+      final response = await http
+          .get(Uri.parse('$baseUrl/artist/$id'))
+          .timeout(const Duration(seconds: 5));
+
+      if (response.statusCode == 200) {
+        return jsonDecode(response.body);
+      } else {
+        throw Exception('Failed to load artist: ${response.statusCode}');
+      }
+    } catch (e) {
+      throw Exception('Could not connect to the server. Please try again.');
+    }
+  }
+
   Future<http.Response> createArtist(Map<String, dynamic> artistData) async {
     try {
       final response = await http

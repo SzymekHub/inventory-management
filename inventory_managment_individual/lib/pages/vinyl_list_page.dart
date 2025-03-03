@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:inventory_management_individual/api/api_service.dart';
-import 'package:inventory_management_individual/pages/navigation_page.dart';
 import 'package:inventory_management_individual/websockets/websocket_service.dart';
 
-import '../main.dart'; // Import to access the global theme settings
+import '../main.dart';
+import 'vinyl_details_page.dart'; // Import to access the global theme settings
 
 class VinylListScreen extends StatefulWidget {
   const VinylListScreen({super.key});
@@ -178,7 +178,7 @@ class VinylCard extends StatelessWidget {
                 ),
               ),
             ),
-            HelpButton(),
+            HelpButton(vinyl: vinyl), // Pass vinyl data to HelpButton
           ],
         ),
         subtitle: RichText(
@@ -231,19 +231,23 @@ class VinylCard extends StatelessWidget {
 
 // Extracted HelpButton widget to keep code clean
 class HelpButton extends StatelessWidget {
-  const HelpButton({super.key});
+  final Map<String, dynamic> vinyl;
 
-  void _navigateToNavigationPage(BuildContext context) {
+  const HelpButton({super.key, required this.vinyl});
+
+  void _navigateToVinylDetailsPage(BuildContext context) {
     Navigator.push(
       context,
-      MaterialPageRoute(builder: (context) => NavigationPage()),
+      MaterialPageRoute(
+        builder: (context) => VinylDetailsPage(vinylId: vinyl['id']),
+      ),
     );
   }
 
   @override
   Widget build(BuildContext context) {
     return IconButton(
-      onPressed: () => _navigateToNavigationPage(context),
+      onPressed: () => _navigateToVinylDetailsPage(context),
       icon: Image.asset(
         'assets/images/question.png',
         width: 35,
