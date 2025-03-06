@@ -37,7 +37,10 @@ class NavigationPage extends StatelessWidget {
                   foregroundColor:
                       InventoryManagementApp.primaryTextColor), // Text color
               onPressed: () => _navigateToVinylListPage(context),
-              child: const Text('View Inventory!'),
+              child: const Text(
+                'View Inventory!',
+                style: TextStyle(fontSize: 38),
+              ),
             ),
             const SizedBox(height: 20),
             ElevatedButton(
