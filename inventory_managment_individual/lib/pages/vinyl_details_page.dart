@@ -1,5 +1,7 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:inventory_management_individual/api/api_service.dart';
+import 'package:image_picker/image_picker.dart';
 import '../main.dart';
 
 class VinylDetailsPage extends StatefulWidget {
@@ -16,8 +18,17 @@ class _VinylDetailsPageState extends State<VinylDetailsPage> {
   Map<String, dynamic>? vinylDetails;
   Map<String, dynamic>? artistDetails;
   bool _isLoading = true;
+  bool _isEditing = false;
+  bool _isUpdating = false;
   String? errorMessage;
   bool _isDeleting = false;
+
+  // Controllers for editable fields
+  final TextEditingController _stockController = TextEditingController();
+
+  // For image handling
+  File? _newImageFile;
+  final ImagePicker _picker = ImagePicker();
 
   @override
   void initState() {
@@ -36,6 +47,8 @@ class _VinylDetailsPageState extends State<VinylDetailsPage> {
       setState(() {
         vinylDetails = data;
         _isLoading = false;
+        // Initialize controllers with current values
+        _stockController.text = vinylDetails!['stock']?.toString() ?? '0';
       });
 
       // Load artist details if artist_id is available
@@ -70,7 +83,80 @@ class _VinylDetailsPageState extends State<VinylDetailsPage> {
       }
     } catch (e) {
       debugPrint('Error loading artist details: $e');
-      // Don't show an error for this, just keep the ID
+    }
+  }
+
+  Future<void> _pickImage() async {
+    try {
+      final XFile? image = await _picker.pickImage(source: ImageSource.camera);
+      if (image != null) {
+        setState(() {
+          _newImageFile = File(image.path);
+        });
+      }
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Failed to pick image: $e'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
+  }
+
+  Future<void> _updateVinyl() async {
+    setState(() {
+      _isUpdating = true;
+    });
+
+    try {
+      // Prepare updated data
+      Map<String, dynamic> updatedData = Map.from(vinylDetails!);
+      updatedData['stock'] = int.parse(_stockController.text);
+      updatedData['artist_id'] = vinylDetails!['artist_id'];
+
+      final response = await apiService.updateVinylWithImage(
+          widget.vinylId, updatedData, _newImageFile);
+
+      if (mounted) {
+        if (response.statusCode == 200) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Vinyl updated successfully'),
+              backgroundColor: Colors.green,
+            ),
+          );
+          // Refresh vinyl details
+          _loadVinylDetails();
+          setState(() {
+            _isEditing = false;
+            _isUpdating = false;
+            _newImageFile = null;
+          });
+        } else {
+          setState(() {
+            _isUpdating = false;
+          });
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Failed to update vinyl: ${response.body}'),
+              backgroundColor: Colors.red,
+            ),
+          );
+        }
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _isUpdating = false;
+        });
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error updating vinyl: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
     }
   }
 
@@ -179,10 +265,28 @@ class _VinylDetailsPageState extends State<VinylDetailsPage> {
         centerTitle: true,
         actions: [
           if (!_isLoading && errorMessage == null)
-            IconButton(
-              icon: const Icon(Icons.delete, color: Colors.red),
-              onPressed: _isDeleting ? null : _showDeleteConfirmationDialog,
-            ),
+            _isEditing
+                ? IconButton(
+                    icon: const Icon(Icons.save, color: Colors.green),
+                    onPressed: _isUpdating ? null : _updateVinyl,
+                  )
+                : Row(
+                    children: [
+                      IconButton(
+                        icon: const Icon(Icons.edit, color: Colors.white),
+                        onPressed: () {
+                          setState(() {
+                            _isEditing = true;
+                          });
+                        },
+                      ),
+                      IconButton(
+                        icon: const Icon(Icons.delete, color: Colors.red),
+                        onPressed:
+                            _isDeleting ? null : _showDeleteConfirmationDialog,
+                      ),
+                    ],
+                  ),
         ],
       ),
       body: _isLoading
@@ -201,9 +305,23 @@ class _VinylDetailsPageState extends State<VinylDetailsPage> {
                     ],
                   ),
                 )
-              : errorMessage != null
-                  ? _buildErrorMessage()
-                  : _buildVinylDetails(),
+              : _isUpdating
+                  ? const Center(
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          CircularProgressIndicator(),
+                          SizedBox(height: 16),
+                          Text(
+                            'Updating vinyl...',
+                            style: InventoryManagementApp.baseTextStyle,
+                          ),
+                        ],
+                      ),
+                    )
+                  : errorMessage != null
+                      ? _buildErrorMessage()
+                      : _buildVinylDetails(),
     );
   }
 
@@ -263,70 +381,7 @@ class _VinylDetailsPageState extends State<VinylDetailsPage> {
             const SizedBox(height: 20),
 
             // Image if available
-            if (vinylDetails!['imagePath'] != null &&
-                vinylDetails!['imagePath'].toString().isNotEmpty)
-              Container(
-                width: 200,
-                height: 200,
-                decoration: BoxDecoration(
-                  border: Border.all(color: Colors.white60, width: 2),
-                  borderRadius: BorderRadius.circular(10),
-                ),
-                child: ClipRRect(
-                  borderRadius: BorderRadius.circular(10),
-                  child: vinylDetails!['imagePath'] != null
-                      ? Image.network(
-                          '${apiService.baseUrl}/vinyls/images/${vinylDetails!['imagePath']}', // Correct URL
-                          fit: BoxFit.cover,
-                          headers: {}, // Add any required headers here
-                          loadingBuilder: (context, child, loadingProgress) {
-                            if (loadingProgress == null) return child;
-                            return Center(
-                              child: CircularProgressIndicator(
-                                value: loadingProgress.expectedTotalBytes !=
-                                        null
-                                    ? loadingProgress.cumulativeBytesLoaded /
-                                        loadingProgress.expectedTotalBytes!
-                                    : null,
-                              ),
-                            );
-                          },
-                          errorBuilder: (context, error, stackTrace) {
-                            debugPrint('Image failed to load: $error');
-                            return const Center(
-                              child: Icon(
-                                Icons.broken_image,
-                                size: 50,
-                                color: Colors.white60,
-                              ),
-                            );
-                          },
-                        )
-                      : const Center(
-                          child: Icon(
-                            Icons.album,
-                            size: 50,
-                            color: Colors.white60,
-                          ),
-                        ),
-                ),
-              )
-            else
-              Container(
-                width: 200,
-                height: 200,
-                decoration: BoxDecoration(
-                  border: Border.all(color: Colors.white60, width: 2),
-                  borderRadius: BorderRadius.circular(10),
-                ),
-                child: const Center(
-                  child: Icon(
-                    Icons.album,
-                    size: 50,
-                    color: Colors.white60,
-                  ),
-                ),
-              ),
+            _isEditing ? _buildEditableImage() : _buildDisplayImage(),
             const SizedBox(height: 20),
 
             // Release Status
@@ -368,6 +423,7 @@ class _VinylDetailsPageState extends State<VinylDetailsPage> {
               artistDetails != null
                   ? artistDetails!['name'] ?? 'Unknown Artist'
                   : 'Loading...',
+              isEditable: false,
             ),
             const SizedBox(height: 10),
 
@@ -376,12 +432,14 @@ class _VinylDetailsPageState extends State<VinylDetailsPage> {
               children: [
                 Expanded(
                   child: _buildInfoField(
-                      'Vinyl Type', vinylDetails!['vinylType'] ?? 'N/A'),
+                      'Vinyl Type', vinylDetails!['vinylType'] ?? 'N/A',
+                      isEditable: false),
                 ),
                 const SizedBox(width: 10),
                 Expanded(
-                  child:
-                      _buildInfoField('Speed', vinylDetails!['speed'] ?? 'N/A'),
+                  child: _buildInfoField(
+                      'Speed', vinylDetails!['speed'] ?? 'N/A',
+                      isEditable: false),
                 ),
               ],
             ),
@@ -391,13 +449,15 @@ class _VinylDetailsPageState extends State<VinylDetailsPage> {
             Row(
               children: [
                 Expanded(
-                  child:
-                      _buildInfoField('State', vinylDetails!['state'] ?? 'N/A'),
+                  child: _buildInfoField(
+                      'State', vinylDetails!['state'] ?? 'N/A',
+                      isEditable: false),
                 ),
                 const SizedBox(width: 10),
                 Expanded(
-                  child:
-                      _buildInfoField('Color', vinylDetails!['color'] ?? 'N/A'),
+                  child: _buildInfoField(
+                      'Color', vinylDetails!['color'] ?? 'N/A',
+                      isEditable: false),
                 ),
               ],
             ),
@@ -408,12 +468,14 @@ class _VinylDetailsPageState extends State<VinylDetailsPage> {
               children: [
                 Expanded(
                   child: _buildInfoField(
-                      'Stock', vinylDetails!['stock']?.toString() ?? 'N/A'),
+                      'Stock', vinylDetails!['stock']?.toString() ?? 'N/A',
+                      isEditable: true, controller: _stockController),
                 ),
                 const SizedBox(width: 10),
                 Expanded(
                   child: _buildInfoField('Price',
-                      '\$${vinylDetails!['price']?.toStringAsFixed(2) ?? 'N/A'}'),
+                      '\$${vinylDetails!['price']?.toStringAsFixed(2) ?? 'N/A'}',
+                      isEditable: false),
                 ),
               ],
             ),
@@ -424,21 +486,152 @@ class _VinylDetailsPageState extends State<VinylDetailsPage> {
                 vinylDetails!['description'].toString().isNotEmpty) ...[
               const SizedBox(height: 10),
               _buildInfoField('Description', vinylDetails!['description'],
-                  maxLines: 4),
+                  maxLines: 4, isEditable: false),
             ],
 
             const SizedBox(height: 20),
+
+            // Edit mode buttons
+            if (_isEditing) ...[
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  ElevatedButton(
+                    style: ElevatedButton.styleFrom(
+                      foregroundColor: Colors.white,
+                      backgroundColor:
+                          Colors.red, // Set background color to red
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 20, vertical: 10),
+                    ),
+                    onPressed: () {
+                      setState(() {
+                        _isEditing = false;
+                        _newImageFile = null;
+                        // Reset controller to original value
+                        _stockController.text =
+                            vinylDetails!['stock']?.toString() ?? '0';
+                      });
+                    },
+                    child: const Text('Cancel',
+                        style: TextStyle(
+                            fontSize: 20, fontWeight: FontWeight.bold)),
+                  ),
+                  const SizedBox(width: 20),
+                  ElevatedButton(
+                    style: ElevatedButton.styleFrom(
+                      foregroundColor: InventoryManagementApp.primaryTextColor,
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 20, vertical: 10),
+                    ),
+                    onPressed: _updateVinyl,
+                    child: const Text('SAVE',
+                        style: TextStyle(
+                            fontSize: 20, fontWeight: FontWeight.bold)),
+                  ),
+                ],
+              ),
+            ],
           ],
         ),
       ),
     );
   }
 
-  Widget _buildInfoField(String label, String value, {int maxLines = 1}) {
+  Widget _buildEditableImage() {
+    return Column(
+      children: [
+        _newImageFile != null
+            ? Container(
+                width: 200,
+                height: 200,
+                decoration: BoxDecoration(
+                  border: Border.all(color: Colors.white60, width: 2),
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(10),
+                  child: Image.file(
+                    _newImageFile!,
+                    fit: BoxFit.cover,
+                  ),
+                ),
+              )
+            : _buildDisplayImage(),
+        const SizedBox(height: 10),
+        ElevatedButton.icon(
+          icon: const Icon(Icons.camera_alt),
+          label: const Text('Take New Photo',
+              style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
+          style: ElevatedButton.styleFrom(
+            foregroundColor: InventoryManagementApp.primaryTextColor,
+            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+          ),
+          onPressed: _pickImage,
+        ),
+      ],
+    );
+  }
+
+  Widget _buildDisplayImage() {
+    return Container(
+      width: 200,
+      height: 200,
+      decoration: BoxDecoration(
+        border: Border.all(color: Colors.white60, width: 2),
+        borderRadius: BorderRadius.circular(10),
+      ),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(10),
+        child: vinylDetails!['imagePath'] != null &&
+                vinylDetails!['imagePath'].toString().isNotEmpty
+            ? Image.network(
+                '${apiService.baseUrl}/vinyls/images/${vinylDetails!['imagePath']}',
+                fit: BoxFit.cover,
+                headers: {}, // Add any required headers here
+                loadingBuilder: (context, child, loadingProgress) {
+                  if (loadingProgress == null) return child;
+                  return Center(
+                    child: CircularProgressIndicator(
+                      value: loadingProgress.expectedTotalBytes != null
+                          ? loadingProgress.cumulativeBytesLoaded /
+                              loadingProgress.expectedTotalBytes!
+                          : null,
+                    ),
+                  );
+                },
+                errorBuilder: (context, error, stackTrace) {
+                  debugPrint('Image failed to load: $error');
+                  return const Center(
+                    child: Icon(
+                      Icons.broken_image,
+                      size: 50,
+                      color: Colors.white60,
+                    ),
+                  );
+                },
+              )
+            : const Center(
+                child: Icon(
+                  Icons.album,
+                  size: 50,
+                  color: Colors.white60,
+                ),
+              ),
+      ),
+    );
+  }
+
+  Widget _buildInfoField(String label, String value,
+      {int maxLines = 1,
+      bool isEditable = false,
+      TextEditingController? controller}) {
     return TextField(
-      controller: TextEditingController(text: value),
-      readOnly: true,
+      controller: controller ?? TextEditingController(text: value),
+      readOnly: !isEditable,
       maxLines: maxLines,
+      keyboardType:
+          label == 'Stock' ? TextInputType.number : TextInputType.text,
       decoration: InputDecoration(
         labelText: label,
         labelStyle: InventoryManagementApp.baseTextStyle
@@ -446,12 +639,17 @@ class _VinylDetailsPageState extends State<VinylDetailsPage> {
         border: const OutlineInputBorder(
           borderSide: BorderSide(color: Colors.white60),
         ),
-        enabledBorder: const OutlineInputBorder(
-          borderSide: BorderSide(color: Colors.white60),
+        enabledBorder: OutlineInputBorder(
+          borderSide: BorderSide(
+            color: isEditable ? Colors.green : Colors.white60,
+            width: isEditable ? 2 : 1,
+          ),
         ),
         focusedBorder: const OutlineInputBorder(
-          borderSide: BorderSide(color: Colors.white60),
+          borderSide: BorderSide(color: Colors.green, width: 2),
         ),
+        filled: isEditable,
+        fillColor: isEditable ? Colors.black45 : null,
       ),
       style: InventoryManagementApp.baseTextStyle.copyWith(
         fontSize: 17,
@@ -459,5 +657,11 @@ class _VinylDetailsPageState extends State<VinylDetailsPage> {
         fontFamily: 'ABeeZee',
       ),
     );
+  }
+
+  @override
+  void dispose() {
+    _stockController.dispose();
+    super.dispose();
   }
 }

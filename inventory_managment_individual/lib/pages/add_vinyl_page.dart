@@ -17,7 +17,7 @@ class AddVinylPage extends StatefulWidget {
 
 class AddVinylPageState extends State<AddVinylPage> {
   final ApiService apiService = ApiService();
-  final NfcService nfcService = NfcService(); // Instantiate NFC service
+  final NfcService nfcService = NfcService();
   String? scannedTagId;
 
   // State for enum values
@@ -42,7 +42,7 @@ class AddVinylPageState extends State<AddVinylPage> {
   final TextEditingController newArtistBioController = TextEditingController();
   final TextEditingController quantityController = TextEditingController();
   final TextEditingController priceController = TextEditingController();
-  bool isReleased = false; // Default to false
+  bool isReleased = false;
   final TextEditingController descriptionController = TextEditingController();
 
   // Image Picker
@@ -258,31 +258,25 @@ class AddVinylPageState extends State<AddVinylPage> {
         selectedArtistId = null;
       }
 
-      debugPrint("Enums Value are: $enums"); //Add this
-      debugPrint(
-          'Selected VinylType value to assign: ${tagData['vinylType']}'); //Add this
+      debugPrint("Enums Value are: $enums");
+      debugPrint('Selected VinylType value to assign: ${tagData['vinylType']}');
       // Other Fields with explicit type conversions and null checks
-      selectedVinylType = tagData['vinylType']?.toString(); // Convert to String
-      debugPrint("selectedVinylType Value are: $selectedVinylType"); //Add this
-      selectedSpeed = tagData['speed']?.toString(); // Convert to String
-      debugPrint("selectedSpeed Value are: $selectedSpeed"); //Add this
-      selectedState = tagData['state']?.toString(); // Convert to String
-      debugPrint("selectedState Value are: $selectedState"); //Add this
-      selectedColor = tagData['color']?.toString(); // Convert to String
-      debugPrint("selectedColor Value are: $selectedColor"); //Add this
-      isReleased = tagData['isReleased'] == true; // Safe Boolean Conversion
-      debugPrint("isReleased Value are: $isReleased"); //Add this
-      priceController.text =
-          (tagData['price'] as num?)?.toString() ?? ''; // Correct Type Handling
-      debugPrint("priceController Value are: $priceController"); //Add this
-      quantityController.text =
-          (tagData['stock'] as num?)?.toString() ?? ''; // Correct Type Handling
-      debugPrint(
-          "quantityController Value are: $quantityController"); //Add this
-      descriptionController.text =
-          tagData['description']?.toString() ?? ''; // Convert to String
-      debugPrint(
-          "descriptionController Value are: $descriptionController"); //Add this
+      selectedVinylType = tagData['vinylType']?.toString();
+      debugPrint("selectedVinylType Value are: $selectedVinylType");
+      selectedSpeed = tagData['speed']?.toString();
+      debugPrint("selectedSpeed Value are: $selectedSpeed");
+      selectedState = tagData['state']?.toString();
+      debugPrint("selectedState Value are: $selectedState");
+      selectedColor = tagData['color']?.toString();
+      debugPrint("selectedColor Value are: $selectedColor");
+      isReleased = tagData['isReleased'] == true;
+      debugPrint("isReleased Value are: $isReleased");
+      priceController.text = (tagData['price'] as num?)?.toString() ?? '';
+      debugPrint("priceController Value are: $priceController");
+      quantityController.text = (tagData['stock'] as num?)?.toString() ?? '';
+      debugPrint("quantityController Value are: $quantityController");
+      descriptionController.text = tagData['description']?.toString() ?? '';
+      debugPrint("descriptionController Value are: $descriptionController");
     });
   }
 
@@ -328,7 +322,7 @@ class AddVinylPageState extends State<AddVinylPage> {
 
         // Update form fields with data from the NFC tag
         titleController.text = tagData['title']?.toString() ?? '';
-        debugPrint("titleController.text Value are: $titleController"); //Added
+        debugPrint("titleController.text Value are: $titleController");
         // Artist ID and Name
         if (tagData.containsKey('artist_id') && tagData['artist_id'] != null) {
           if (tagData['artist_id'] is int) {
@@ -341,8 +335,7 @@ class AddVinylPageState extends State<AddVinylPage> {
           try {
             selectedArtistName = artists.firstWhere(
                 (artist) => artist['id'] == selectedArtistId)['name'];
-            debugPrint(
-                "selectedArtistName Value are: $selectedArtistName"); //Added
+            debugPrint("selectedArtistName Value are: $selectedArtistName");
           } catch (e) {
             debugPrint('Artist with ID $selectedArtistId not found.');
             selectedArtistName = null;
@@ -353,33 +346,26 @@ class AddVinylPageState extends State<AddVinylPage> {
           selectedArtistId = null;
         }
 
-        debugPrint("Enums Value are: $enums"); //Add this
+        debugPrint("Enums Value are: $enums");
         debugPrint(
-            'Selected VinylType value to assign: ${tagData['vinylType']}'); //Add this
+            'Selected VinylType value to assign: ${tagData['vinylType']}');
         // Other Fields with explicit type conversions and null checks
-        selectedVinylType =
-            tagData['vinylType']?.toString(); // Convert to String
-        debugPrint(
-            "selectedVinylType Value are: $selectedVinylType"); //Add this
-        selectedSpeed = tagData['speed']?.toString(); // Convert to String
-        debugPrint("selectedSpeed Value are: $selectedSpeed"); //Add this
-        selectedState = tagData['state']?.toString(); // Convert to String
-        debugPrint("selectedState Value are: $selectedState"); //Add this
-        selectedColor = tagData['color']?.toString(); // Convert to String
-        debugPrint("selectedColor Value are: $selectedColor"); //Add this
-        isReleased = tagData['isReleased'] == true; // Safe Boolean Conversion
-        debugPrint("isReleased Value are: $isReleased"); //Add this
-        priceController.text = (tagData['price'] as num?)?.toString() ??
-            ''; // Correct Type Handling
-        debugPrint("priceController Value are: $priceController"); //Add this
-        quantityController.text = (tagData['stock'] as num?)?.toString() ??
-            ''; // Correct Type Handling
-        debugPrint(
-            "quantityController Value are: $quantityController"); //Add this
-        descriptionController.text =
-            tagData['description']?.toString() ?? ''; // Convert to String
-        debugPrint(
-            "descriptionController Value are: $descriptionController"); //Add this
+        selectedVinylType = tagData['vinylType']?.toString();
+        debugPrint("selectedVinylType Value are: $selectedVinylType");
+        selectedSpeed = tagData['speed']?.toString();
+        debugPrint("selectedSpeed Value are: $selectedSpeed");
+        selectedState = tagData['state']?.toString();
+        debugPrint("selectedState Value are: $selectedState");
+        selectedColor = tagData['color']?.toString();
+        debugPrint("selectedColor Value are: $selectedColor");
+        isReleased = tagData['isReleased'] == true;
+        debugPrint("isReleased Value are: $isReleased");
+        priceController.text = (tagData['price'] as num?)?.toString() ?? '';
+        debugPrint("priceController Value are: $priceController");
+        quantityController.text = (tagData['stock'] as num?)?.toString() ?? '';
+        debugPrint("quantityController Value are: $quantityController");
+        descriptionController.text = tagData['description']?.toString() ?? '';
+        debugPrint("descriptionController Value are: $descriptionController");
       });
     } else {
       // Handle NFC reading failure (e.g., show a snackbar)
@@ -460,7 +446,7 @@ class AddVinylPageState extends State<AddVinylPage> {
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
               Text('Scanned Tag ID: ${scannedTagId ?? "No tag scanned"}',
-                  style: TextStyle(color: Colors.white)), //debug
+                  style: TextStyle(color: Colors.white)),
               // Image and Title section
               InkWell(
                 onTap: getImage,
@@ -847,8 +833,8 @@ class AddVinylPageState extends State<AddVinylPage> {
       selectedSpeed = null;
       selectedState = null;
       selectedColor = null;
-      isReleased = false; // Reset the isReleased state
-      _image = null; // Also clear the selected image
+      isReleased = false;
+      _image = null;
       scannedTagId = null;
     });
   }

@@ -112,7 +112,7 @@ class ApiService {
         // Determine the Content-Type of the image file
         final mimeTypeData =
             lookupMimeType(imageFile.path, headerBytes: [0xFF, 0xD8])!
-                .split('/'); // Add this import 'package:mime/mime.dart';
+                .split('/');
         // Add the image file as a part
         request.files.add(await http.MultipartFile.fromPath(
           'image',
@@ -130,19 +130,37 @@ class ApiService {
     }
   }
 
-  Future<http.Response> updateVinyl(
-      int id, Map<String, dynamic> vinylData) async {
+  Future<http.Response> updateVinylWithImage(
+      int id, Map<String, dynamic> vinylData, File? imageFile) async {
     try {
-      final response = await http
-          .put(
-            Uri.parse('$baseUrl/vinyls/$id'),
-            headers: <String, String>{
-              'Content-Type': 'application/json; charset=UTF-8',
-            },
-            body: jsonEncode(vinylData),
-          )
-          .timeout(const Duration(seconds: 5));
-      return response;
+      var request =
+          http.MultipartRequest('PUT', Uri.parse('$baseUrl/vinyls/$id'));
+
+      // Add vinyl data as JSON
+      request.files.add(
+        http.MultipartFile.fromString(
+          'vinylData',
+          jsonEncode(vinylData),
+          contentType: MediaType('application', 'json'),
+        ),
+      );
+
+      // Add image file
+      if (imageFile != null) {
+        final mimeTypeData =
+            lookupMimeType(imageFile.path, headerBytes: [0xFF, 0xD8])!
+                .split('/');
+        request.files.add(await http.MultipartFile.fromPath(
+          'image',
+          imageFile.path,
+          contentType: MediaType(mimeTypeData[0], mimeTypeData[1]),
+        ));
+      }
+
+      // Send the request
+      var streamedResponse =
+          await request.send().timeout(const Duration(seconds: 5));
+      return http.Response.fromStream(streamedResponse);
     } catch (e) {
       throw Exception('Could not connect to the server. Please try again.');
     }

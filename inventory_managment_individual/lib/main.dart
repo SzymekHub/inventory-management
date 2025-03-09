@@ -10,7 +10,6 @@ void main() {
     webSocketService.connect('ws://10.0.2.2:8080/ws');
   } catch (e) {
     debugPrint("Error connecting to WebSocket: $e");
-    //Display an error message to the user
   }
   runApp(const InventoryManagementApp());
 }
@@ -89,12 +88,10 @@ class _HomePageState extends State<HomePage> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.start,
           children: <Widget>[
-            const LogoImage(), // Use the extracted LogoImage widget
-            const WelcomeText(), // Use the extracted WelcomeText widget
+            const LogoImage(),
+            const WelcomeText(),
             const SizedBox(height: 80),
-            GetManagingButton(
-                onPressed:
-                    _navigateToNavigationPage), // Use the extracted GetManagingButton widget
+            GetManagingButton(onPressed: _navigateToNavigationPage),
           ],
         ),
       ),

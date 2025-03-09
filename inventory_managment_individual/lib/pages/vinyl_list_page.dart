@@ -3,7 +3,7 @@ import 'package:inventory_management_individual/api/api_service.dart';
 import 'package:inventory_management_individual/websockets/websocket_service.dart';
 
 import '../main.dart';
-import 'vinyl_details_page.dart'; // Import to access the global theme settings
+import 'vinyl_details_page.dart';
 
 class VinylListScreen extends StatefulWidget {
   const VinylListScreen({super.key});
@@ -14,8 +14,7 @@ class VinylListScreen extends StatefulWidget {
 
 class VinylListScreenState extends State<VinylListScreen> {
   final ApiService apiService = ApiService();
-  final WebSocketService _webSocketService =
-      WebSocketService(); // Get the instance
+  final WebSocketService _webSocketService = WebSocketService();
 
   List<Map<String, dynamic>> vinyls = [];
   bool _isLoading = true;
@@ -25,7 +24,6 @@ class VinylListScreenState extends State<VinylListScreen> {
   // Initializes API calls in initState()
   void initState() {
     super.initState();
-    _loadVinyls();
 
     // Listen for real-time updates
     _webSocketService.listen((message) {
@@ -36,6 +34,12 @@ class VinylListScreenState extends State<VinylListScreen> {
     });
   }
 
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    _loadVinyls();
+  }
+
   // Fetch vinyl records from the API
   Future<void> _loadVinyls() async {
     setState(() {
@@ -44,7 +48,7 @@ class VinylListScreenState extends State<VinylListScreen> {
     });
 
     try {
-      final data = await apiService.getVinyls(0, 10); // Page 0, size 10
+      final data = await apiService.getVinyls(0, 10);
       setState(() {
         vinyls = data;
         _isLoading = false;
@@ -75,7 +79,7 @@ class VinylListScreenState extends State<VinylListScreen> {
       appBar: AppBar(
         title: const Text('INVENTORY LIST',
             style: InventoryManagementApp.baseTextStyle),
-        centerTitle: true, // Center the title
+        centerTitle: true,
       ),
       body: Container(
         padding: const EdgeInsets.all(16.0),
@@ -111,8 +115,7 @@ class VinylListScreenState extends State<VinylListScreen> {
             const SizedBox(height: 20),
             ElevatedButton(
               style: ElevatedButton.styleFrom(
-                  foregroundColor:
-                      InventoryManagementApp.primaryTextColor), // Text color
+                  foregroundColor: InventoryManagementApp.primaryTextColor),
               onPressed: _loadVinyls,
               child: const Text('Retry'),
             ),
@@ -143,7 +146,7 @@ class VinylCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Card(
-      color: const Color(0xFFA9D6BB), // Match theme color
+      color: const Color(0xFFA9D6BB),
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(15),
         side: const BorderSide(
@@ -178,7 +181,7 @@ class VinylCard extends StatelessWidget {
                 ),
               ),
             ),
-            HelpButton(vinyl: vinyl), // Pass vinyl data to HelpButton
+            HelpButton(vinyl: vinyl),
           ],
         ),
         subtitle: RichText(
@@ -202,7 +205,7 @@ class VinylCard extends StatelessWidget {
                 ),
               ),
               const WidgetSpan(
-                child: SizedBox(width: 15), // Add a small break
+                child: SizedBox(width: 15), // Adds space between text spans
               ),
               TextSpan(
                 text: 'Price: ',
@@ -244,12 +247,13 @@ class HelpButton extends StatelessWidget {
       ),
     );
 
-    // If we got a true result (meaning a deletion occurred)
-    if (result == true) {
+    // If we got a true result (meaning a deletion or update occurred)
+    if (result == true || result == null) {
       // Find the parent VinylListScreenState to refresh the list
       final listState = context.findAncestorStateOfType<VinylListScreenState>();
       if (listState != null) {
-        listState._loadVinyls();
+        // Wait for the refresh to complete
+        await listState._loadVinyls();
       }
     }
   }
@@ -264,10 +268,9 @@ class HelpButton extends StatelessWidget {
         height: 35,
       ),
       style: IconButton.styleFrom(
-        backgroundColor:
-            const Color(0x9E5273B5), // Background color of the circle
+        backgroundColor: const Color(0x9E5273B5),
         shape: const CircleBorder(),
-        padding: const EdgeInsets.all(13), // Makes the button bigger
+        padding: const EdgeInsets.all(13),
       ),
     );
   }
