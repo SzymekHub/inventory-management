@@ -185,7 +185,7 @@ class VinylCard extends StatelessWidget {
           text: TextSpan(
             children: [
               TextSpan(
-                text: 'quantity: ',
+                text: 'Stock: ',
                 style: InventoryManagementApp.baseTextStyle.copyWith(
                   color: Colors.black,
                   fontSize: 20,
