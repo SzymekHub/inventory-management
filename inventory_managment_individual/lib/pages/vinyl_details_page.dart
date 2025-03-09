@@ -639,17 +639,14 @@ class _VinylDetailsPageState extends State<VinylDetailsPage> {
         border: const OutlineInputBorder(
           borderSide: BorderSide(color: Colors.white60),
         ),
-        enabledBorder: OutlineInputBorder(
-          borderSide: BorderSide(
-            color: isEditable ? Colors.green : Colors.white60,
-            width: isEditable ? 2 : 1,
-          ),
+        enabledBorder: const OutlineInputBorder(
+          borderSide: BorderSide(color: Colors.white60),
         ),
         focusedBorder: const OutlineInputBorder(
-          borderSide: BorderSide(color: Colors.green, width: 2),
+          borderSide: BorderSide(color: Colors.white60),
         ),
-        filled: isEditable,
-        fillColor: isEditable ? Colors.black45 : null,
+        filled: _isEditing && isEditable,
+        fillColor: _isEditing && isEditable ? const Color(0x37818181) : null,
       ),
       style: InventoryManagementApp.baseTextStyle.copyWith(
         fontSize: 17,
