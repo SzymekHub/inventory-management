@@ -41,6 +41,9 @@ dependencies:
   image_picker: ^0.8.5+3 
   http_parser: ^4.0.0  
   mime: ^1.0.4 
+  # Add these NFC packages
+  nfc_manager: ^3.3.0
+  flutter_nfc_kit: ^3.4.0
 
 dev_dependencies:
   flutter_test:

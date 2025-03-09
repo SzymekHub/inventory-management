@@ -9,11 +9,11 @@ class ApiService {
   // When physical Android device connected to my development machine, 10.0.2.2 might not work.
   // In that case, I need to use my development machine's actual IP address on my local network.
   // android emulator:
-  final String baseUrl = 'http://10.0.2.2:8080';
+  //final String baseUrl = 'http://10.0.2.2:8080';
 
   // machine IP address:
   // cmd -> ipconfig -> Wireless LAN adapter WiFi ->  IPv4 Address
-  //final String baseUrl = 'http://192.168.178.36:8080';
+  final String baseUrl = 'http://192.168.178.36:8080';
 
   // New method to fetch enums
   Future<Map<String, List<String>>> getVinylEnums() async {
@@ -68,6 +68,26 @@ class ApiService {
         return jsonDecode(response.body);
       } else {
         throw Exception('Failed to load vinyl: ${response.statusCode}');
+      }
+    } catch (e) {
+      throw Exception('Could not connect to the server. Please try again.');
+    }
+  }
+
+  // Get vinyl by tag ID
+  Future<Map<String, dynamic>?> getVinylByTagId(String tagId) async {
+    try {
+      final response = await http
+          .get(Uri.parse('$baseUrl/vinyls/tag/$tagId'))
+          .timeout(const Duration(seconds: 5));
+
+      if (response.statusCode == 200) {
+        return jsonDecode(response.body);
+      } else if (response.statusCode == 404) {
+        // Tag not found in database
+        return null;
+      } else {
+        throw Exception('Failed to load vinyl by tag: ${response.statusCode}');
       }
     } catch (e) {
       throw Exception('Could not connect to the server. Please try again.');

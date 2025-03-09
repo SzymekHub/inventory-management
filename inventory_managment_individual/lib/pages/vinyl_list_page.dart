@@ -235,13 +235,23 @@ class HelpButton extends StatelessWidget {
 
   const HelpButton({super.key, required this.vinyl});
 
-  void _navigateToVinylDetailsPage(BuildContext context) {
-    Navigator.push(
+  void _navigateToVinylDetailsPage(BuildContext context) async {
+    // Wait for a result from the details page
+    final result = await Navigator.push(
       context,
       MaterialPageRoute(
         builder: (context) => VinylDetailsPage(vinylId: vinyl['id']),
       ),
     );
+
+    // If we got a true result (meaning a deletion occurred)
+    if (result == true) {
+      // Find the parent VinylListScreenState to refresh the list
+      final listState = context.findAncestorStateOfType<VinylListScreenState>();
+      if (listState != null) {
+        listState._loadVinyls();
+      }
+    }
   }
 
   @override

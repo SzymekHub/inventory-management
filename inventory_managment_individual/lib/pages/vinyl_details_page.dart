@@ -17,6 +17,7 @@ class _VinylDetailsPageState extends State<VinylDetailsPage> {
   Map<String, dynamic>? artistDetails;
   bool _isLoading = true;
   String? errorMessage;
+  bool _isDeleting = false;
 
   @override
   void initState() {
@@ -73,6 +74,102 @@ class _VinylDetailsPageState extends State<VinylDetailsPage> {
     }
   }
 
+  Future<void> _deleteVinyl() async {
+    setState(() {
+      _isDeleting = true;
+    });
+
+    try {
+      final response = await apiService.deleteVinyl(widget.vinylId);
+
+      if (mounted) {
+        if (response.statusCode == 200) {
+          // Show success message
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Vinyl deleted successfully'),
+              backgroundColor: Colors.green,
+            ),
+          );
+
+          // Navigate back to the previous screen with a result
+          Navigator.of(context)
+              .pop(true); // Pass true to indicate deletion occurred
+        } else {
+          // Show error message
+          setState(() {
+            _isDeleting = false;
+          });
+
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Failed to delete vinyl: ${response.body}'),
+              backgroundColor: Colors.red,
+            ),
+          );
+        }
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _isDeleting = false;
+        });
+
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error deleting vinyl: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
+  }
+
+  void _showDeleteConfirmationDialog() {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          backgroundColor: InventoryManagementApp.primaryBackgroundColor,
+          title: Text(
+            'Confirm Delete',
+            style: InventoryManagementApp.baseTextStyle.copyWith(
+              fontSize: 20,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+          content: Text(
+            'Are you sure you want to delete this vinyl?',
+            style: InventoryManagementApp.baseTextStyle,
+          ),
+          actions: <Widget>[
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: Text(
+                'Cancel',
+                style: InventoryManagementApp.baseTextStyle.copyWith(
+                  color: Colors.grey,
+                ),
+              ),
+            ),
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pop();
+                _deleteVinyl();
+              },
+              child: Text(
+                'Delete',
+                style: InventoryManagementApp.baseTextStyle.copyWith(
+                  color: Colors.red,
+                ),
+              ),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -80,12 +177,33 @@ class _VinylDetailsPageState extends State<VinylDetailsPage> {
         title: const Text('VINYL DETAILS',
             style: InventoryManagementApp.baseTextStyle),
         centerTitle: true,
+        actions: [
+          if (!_isLoading && errorMessage == null)
+            IconButton(
+              icon: const Icon(Icons.delete, color: Colors.red),
+              onPressed: _isDeleting ? null : _showDeleteConfirmationDialog,
+            ),
+        ],
       ),
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
-          : errorMessage != null
-              ? _buildErrorMessage()
-              : _buildVinylDetails(),
+          : _isDeleting
+              ? const Center(
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      CircularProgressIndicator(),
+                      SizedBox(height: 16),
+                      Text(
+                        'Deleting vinyl...',
+                        style: InventoryManagementApp.baseTextStyle,
+                      ),
+                    ],
+                  ),
+                )
+              : errorMessage != null
+                  ? _buildErrorMessage()
+                  : _buildVinylDetails(),
     );
   }
 
@@ -174,7 +292,7 @@ class _VinylDetailsPageState extends State<VinylDetailsPage> {
                             );
                           },
                           errorBuilder: (context, error, stackTrace) {
-                            print('Image error: $error'); // Add this to debug
+                            debugPrint('Image failed to load: $error');
                             return const Center(
                               child: Icon(
                                 Icons.broken_image,
