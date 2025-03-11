@@ -13,7 +13,7 @@ class ApiService {
 
   // machine IP address:
   // cmd -> ipconfig -> Wireless LAN adapter WiFi ->  IPv4 Address
-  final String baseUrl = 'http://192.168.178.36:8080';
+  final String baseUrl = 'http://145.93.104.208:8080';
 
   // New method to fetch enums
   Future<Map<String, List<String>>> getVinylEnums() async {

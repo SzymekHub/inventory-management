@@ -7,7 +7,7 @@ void main() {
   // This is ideal because the connection is available whenever I need it, and that way I avoid the overhead of reconnecting every time I navigate to a specific screen.
   final webSocketService = WebSocketService();
   try {
-    webSocketService.connect('ws://10.0.2.2:8080/ws');
+    webSocketService.connect('ws://145.93.104.208:8080/ws');
   } catch (e) {
     debugPrint("Error connecting to WebSocket: $e");
   }
