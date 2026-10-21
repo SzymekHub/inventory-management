@@ -1,93 +1,114 @@
-# Inventory Management
+# Inventory Management (Flutter app)
 
+A mobile inventory app for vinyl records. The project was done in 3 weeks in year 2, semester 4 of my studies. Staff can browse the stock, open a record's details, and add new records with a title, artist, specs, price, stock count and a photo. The app is built to pair with NFC tags, so a physical record can be identified by tapping its tag.
 
+This is the front-end of a two-part system. The REST and WebSocket API lives in [inventory-management-backend](https://github.com/SzymekHub/inventory-management-backend).
 
-## Getting started
+> **Status:** Completed as a school project. Scanning NFC tags to find and fill in a record works on an Android phone with real tags, and I tested it that way. Image recognition was not implemented. See [Future work](#future-work).
 
-To make it easy for you to get started with GitLab, here's a list of recommended next steps.
+## Features
 
-Already a pro? Just edit this README.md and make it your own. Want to make it easy? [Use the template at the bottom](#editing-this-readme)!
+- Welcome screen with navigation to the vinyl list
+- Paginated list of vinyl records fetched from the backend
+- Detail page for each record
+- Add-vinyl form with an image picker (camera or gallery)
+- Artist lookup and creation
+- NFC tag reading in the add-vinyl flow (Android devices with NFC)
+- A persistent WebSocket connection, opened at startup, which the list page listens to for live updates
 
-## Add your files
+## Tech stack
 
-- [ ] [Create](https://docs.gitlab.com/ee/user/project/repository/web_editor.html#create-a-file) or [upload](https://docs.gitlab.com/ee/user/project/repository/web_editor.html#upload-a-file) files
-- [ ] [Add files using the command line](https://docs.gitlab.com/ee/gitlab-basics/add-file.html#add-a-file-using-the-command-line) or push an existing Git repository with the following command:
+- Flutter / Dart (SDK `^3.6.2`)
+- `http` for REST calls, `web_socket_channel` for WebSockets
+- `image_picker` for photos
+- `nfc_manager` and `flutter_nfc_kit` for NFC
+- Custom font: Pixelify Sans (bundled in `assets/fonts`)
+
+## Project layout
+
+The Flutter project is in the `inventory_managment_individual/` folder. Everything below is relative to that folder.
 
 ```
-cd existing_repo
-git remote add origin https://git.fhict.nl/I540927/inventory-management.git
-git branch -M main
-git push -uf origin main
+lib/
+├── main.dart                     # App entry, theme, WebSocket connection at startup
+├── api/api_service.dart          # All REST calls to the backend
+├── nfc/nfc_service.dart          # NFC session and NDEF/JSON tag reading
+├── websockets/websocket_service.dart
+└── pages/
+    ├── navigation_page.dart
+    ├── vinyl_list_page.dart
+    ├── vinyl_details_page.dart
+    └── add_vinyl_page.dart
 ```
 
-## Integrate with your tools
+## Requirements
 
-- [ ] [Set up project integrations](https://git.fhict.nl/I540927/inventory-management/-/settings/integrations)
+- [Flutter SDK](https://docs.flutter.dev/get-started/install) compatible with Dart `^3.6.2`
+- Android Studio (for the Android SDK and emulator) or a physical Android device with USB debugging enabled
+- The [inventory-management-backend](https://github.com/SzymekHub/inventory-management-backend) running and reachable from the device
+- A physical device with NFC if you want to test tag reading (the emulator has no NFC)
 
-## Collaborate with your team
+## Setup
 
-- [ ] [Invite team members and collaborators](https://docs.gitlab.com/ee/user/project/members/)
-- [ ] [Create a new merge request](https://docs.gitlab.com/ee/user/project/merge_requests/creating_merge_requests.html)
-- [ ] [Automatically close issues from merge requests](https://docs.gitlab.com/ee/user/project/issues/managing_issues.html#closing-issues-automatically)
-- [ ] [Enable merge request approvals](https://docs.gitlab.com/ee/user/project/merge_requests/approvals/)
-- [ ] [Set auto-merge](https://docs.gitlab.com/ee/user/project/merge_requests/merge_when_pipeline_succeeds.html)
+1. Clone the repository and go into the Flutter project:
 
-## Test and Deploy
+   ```bash
+   git clone https://github.com/SzymekHub/inventory-management.git
+   cd inventory-management/inventory_managment_individual
+   ```
 
-Use the built-in continuous integration in GitLab.
+2. Install dependencies:
 
-- [ ] [Get started with GitLab CI/CD](https://docs.gitlab.com/ee/ci/quick_start/index.html)
-- [ ] [Analyze your code for known vulnerabilities with Static Application Security Testing (SAST)](https://docs.gitlab.com/ee/user/application_security/sast/)
-- [ ] [Deploy to Kubernetes, Amazon EC2, or Amazon ECS using Auto Deploy](https://docs.gitlab.com/ee/topics/autodevops/requirements.html)
-- [ ] [Use pull-based deployments for improved Kubernetes management](https://docs.gitlab.com/ee/user/clusters/agent/)
-- [ ] [Set up protected environments](https://docs.gitlab.com/ee/ci/environments/protected_environments.html)
+   ```bash
+   flutter pub get
+   ```
 
-***
+3. Point the app at your backend. The backend address is hardcoded in two places, so change both:
 
-# Editing this README
+   - `lib/api/api_service.dart`: the `baseUrl` field, for example `http://<your-host>:8080`
+   - `lib/main.dart`: the WebSocket URL passed to `webSocketService.connect(...)`, for example `ws://<your-host>:8080/ws`
 
-When you're ready to make this README your own, just edit this file and use the handy template below (or feel free to structure it however you want - this is just a starting point!). Thanks to [makeareadme.com](https://www.makeareadme.com/) for this template.
+   Use the right host for your setup:
 
-## Suggestions for a good README
+   - **Android emulator:** `10.0.2.2` points at your computer's `localhost`. The file has this as a commented-out option.
+   - **Physical device:** use your computer's IP address on the local network (run `ipconfig` on Windows or `ifconfig` on macOS/Linux). The device and computer must be on the same network, and the backend must accept connections on port 8080.
 
-Every project is different, so consider which of these sections apply to yours. The sections used in the template are suggestions for most open source projects. Also keep in mind that while a README can be too long and detailed, too long is better than too short. If you think your README is too long, consider utilizing another form of documentation rather than cutting out information.
+4. Run the app:
 
-## Name
-Choose a self-explaining name for your project.
+   ```bash
+   flutter run
+   ```
 
-## Description
-Let people know what your project can do specifically. Provide context and add a link to any reference visitors might be unfamiliar with. A list of Features or a Background subsection can also be added here. If there are alternatives to your project, this is a good place to list differentiating factors.
+   Pick the connected device or emulator when prompted.
 
-## Badges
-On some READMEs, you may see small images that convey metadata, such as whether or not all the tests are passing for the project. You can use Shields to add some to your README. Many services also have instructions for adding a badge.
+## Running the full system
 
-## Visuals
-Depending on what you are making, it can be a good idea to include screenshots or even a video (you'll frequently see GIFs rather than actual videos). Tools like ttygif can help, but check out Asciinema for a more sophisticated method.
+1. Start MySQL and the backend first. See the [backend README](https://github.com/SzymekHub/inventory-management-backend/blob/main/README.md).
+2. Confirm the backend responds, for example by opening `http://<your-host>:8080/vinyls/enums` in a browser. It should return a JSON object.
+3. Run the Flutter app as described above.
 
-## Installation
-Within a particular ecosystem, there may be a common way of installing things, such as using Yarn, NuGet, or Homebrew. However, consider the possibility that whoever is reading your README is a novice and would like more guidance. Listing specific steps helps remove ambiguity and gets people to using your project as quickly as possible. If it only runs in a specific context like a particular programming language version or operating system or has dependencies that have to be installed manually, also add a Requirements subsection.
+## Permissions
 
-## Usage
-Use examples liberally, and show the expected output if you can. It's helpful to have inline the smallest example of usage that you can demonstrate, while providing links to more sophisticated examples if they are too long to reasonably include in the README.
+The Android manifest requests `READ_EXTERNAL_STORAGE` and `WRITE_EXTERNAL_STORAGE`, which the image picker needs. NFC use also requires the NFC permission on the device. The app asks for camera or gallery access when you pick a photo.
 
-## Support
-Tell people where they can go to for help. It can be any combination of an issue tracker, a chat room, an email address, etc.
+## Known limitations
 
-## Roadmap
-If you have ideas for releases in the future, it is a good idea to list them in the README.
+- **The NFC lookup endpoint is missing from the public backend code.** The app calls `GET /vinyls/tag/{tagId}`, but the backend in this repository doesn't implement that route, and migration `V6__UpdateVinylTable.sql` drops the `tag_id` column. The version that was tested on a phone must differ from what is published here. Until the latest backend is pushed, a fresh clone will not complete the tag lookup.
+- **Writing data to NFC tags is not supported.** The app reads tags only. Storing JSON or images on a tag proved too difficult within the project timeline, so images were dropped from the NFC flow.
+- **The backend address is hardcoded** in two files (see Setup).
+- **Only the Android build has been tested with NFC.** The other platform folders (`web`, `windows`, `macos`, `linux`) were generated by Flutter and are not maintained.
+- The `README.md` inside `inventory_managment_individual/` is the default Flutter template. This file replaces it as the project's documentation.
 
-## Contributing
-State if you are open to contributions and what your requirements are for accepting them.
+## Future work
 
-For people who want to make changes to your project, it's helpful to have some documentation on how to get started. Perhaps there is a script that they should run or some environment variables that they need to set. Make these steps explicit. These instructions could also be useful to your future self.
+- Refine existing features based on phone testing: some buttons were too small, and a few steps were unclear.
+- Revisit image recognition for identifying records from their covers, once a suitable free tool is available.
+- Explore writing record data to tags, or reading an ID and fetching the rest from the server, instead of storing the full record on the tag.
 
-You can also document commands to lint the code or run tests. These steps help to ensure high code quality and reduce the likelihood that the changes inadvertently break something. Having instructions for running tests is especially helpful if it requires external setup, such as starting a Selenium server for testing in a browser.
+## Related repositories
 
-## Authors and acknowledgment
-Show your appreciation to those who have contributed to the project.
+- [inventory-management-backend](https://github.com/SzymekHub/inventory-management-backend): Spring Boot REST and WebSocket API with the MySQL database
 
-## License
-For open source projects, say how it is licensed.
+## Author
 
-## Project status
-If you have run out of energy or time for your project, put a note at the top of the README saying that development has slowed down or stopped completely. Someone may choose to fork your project or volunteer to step in as a maintainer or owner, allowing your project to keep going. You can also make an explicit request for maintainers.
+Szymon Gancarz. Built as an individual project in the ICT programme at Fontys University of Applied Sciences.
